@@ -4,60 +4,60 @@
 
 ---
 
-## 📌 Mục Tiêu
+## 📌 Objective
 
-Xây dựng một chương trình C nhỏ dưới dạng OpenWrt package, có chức năng:
+Build a small C program as an OpenWrt package that:
 
-1. Kiểm tra hệ thống có `python3.9` hay không
-2. Nếu có, chạy `python3.9 --version` và in version ra terminal
-3. Ghi kết quả vào `/tmp/python_ver.log`
-4. Test thật trong 2 Docker container — một có Python 3.9, một không có
+1. Checks whether `python3.9` is available on the system
+2. If found, runs `python3.9 --version` and prints the version to the terminal
+3. Writes the result to `/tmp/python_ver.log`
+4. Tests in 2 Docker containers — one with Python 3.9, one without
 
-> **Không cần Raspberry Pi, không cần cài OpenWrt lên máy thật.** Toàn bộ build và test chạy trong Docker container từ terminal Ubuntu.
+> **No Raspberry Pi needed. No need to install OpenWrt on a real machine.** All builds and tests run inside Docker containers from an Ubuntu terminal.
 
 ---
 
-## 🗺️ Mô Hình Hoạt Động
+## 🗺️ How It Works
 
 ```
 Ubuntu laptop terminal
 │
 ├── make package
 │   └── Docker container (OpenWrt SDK x86_64)
-│       └── Build C app → sinh package .apk
+│       └── Build C app → generate .apk package
 │
 └── make test-2-cases
-    ├── Container python:3.9-slim   → có Python 3.9 → app chạy thành công
-    └── Container debian:12-slim    → không có Python → app báo lỗi
+    ├── Container python:3.9-slim   → has Python 3.9 → app runs successfully
+    └── Container debian:12-slim    → no Python     → app reports error
 ```
 
 ---
 
-## 📁 Cấu Trúc Project
+## 📁 Project Structure
 
 ```
 openwrt-python-check-sdk/
-├── Dockerfile.sdk           # Container build OpenWrt SDK
-├── Dockerfile.runtime       # Container test: có Python 3.9
-├── Dockerfile.no-python     # Container test: không có Python
-├── Makefile                 # Điều khiển toàn bộ flow build & test
+├── Dockerfile.sdk           # Container for building with OpenWrt SDK
+├── Dockerfile.runtime       # Test container: with Python 3.9
+├── Dockerfile.no-python     # Test container: without Python
+├── Makefile                 # Controls the entire build & test flow
 ├── README.md
 ├── package/
 │   └── check-python/
 │       ├── Makefile         # OpenWrt package Makefile
 │       └── src/
-│           └── check_python.c   # Source code C
-├── sdk/                     # OpenWrt SDK (tự động tải khi build)
-└── output/                  # Output sau build
+│           └── check_python.c   # C source code
+├── sdk/                     # OpenWrt SDK (auto-downloaded on build)
+└── output/                  # Build output
     ├── check-python-1.0-r1.apk
     └── check_python
 ```
 
 ---
 
-## ⚙️ Yêu Cầu Hệ Thống
+## ⚙️ System Requirements
 
-Cài các tool cần thiết trên Ubuntu:
+Install the required tools on Ubuntu:
 
 ```bash
 sudo apt update
@@ -67,7 +67,7 @@ sudo usermod -aG docker $USER
 newgrp docker
 ```
 
-Kiểm tra Docker, Git, Make:
+Verify Docker, Git, and Make:
 
 ```bash
 docker --version
@@ -75,9 +75,7 @@ git --version
 make --version
 ```
 
-
-
-Nếu gặp lỗi **permission denied** với Docker socket:
+If you encounter a **permission denied** error with the Docker socket:
 
 ```bash
 sudo usermod -aG docker $USER
@@ -87,7 +85,7 @@ docker run hello-world
 
 ---
 
-## 🚀 Khởi Tạo Project
+## 🚀 Project Initialization
 
 ```bash
 mkdir -p ~/openwrt-python-check-sdk
@@ -102,12 +100,12 @@ mkdir -p sdk output
 
 ---
 
-## 📄 Đặt File Source Code
+## 📄 Placing Source Files
 
-Sau khi tạo cấu trúc thư mục, đặt các file source code vào đúng vị trí:
+After creating the directory structure, place source files in the correct locations:
 
-| File | Đặt tại |
-|------|---------|
+| File | Location |
+|------|----------|
 | `check_python.c` | `package/check-python/src/check_python.c` |
 | `Makefile` (OpenWrt package) | `package/check-python/Makefile` |
 | `Dockerfile.sdk` | `./Dockerfile.sdk` |
@@ -115,7 +113,7 @@ Sau khi tạo cấu trúc thư mục, đặt các file source code vào đúng v
 | `Dockerfile.no-python` | `./Dockerfile.no-python` |
 | `Makefile` (root) | `./Makefile` |
 
-> ✅ Sau khi đặt file xong, kiểm tra lại:
+> ✅ After placing the files, verify:
 > ```bash
 > ls -lR package/check-python/
 > ls -l Dockerfile.* Makefile
@@ -123,9 +121,9 @@ Sau khi tạo cấu trúc thư mục, đặt các file source code vào đúng v
 
 ---
 
-## 🔧 Fix Permission (nếu cần)
+## 🔧 Fix Permissions (if needed)
 
-Nếu từng build bằng Docker trước đó và gặp lỗi **Permission denied**, chạy:
+If you previously built with Docker and encounter **Permission denied** errors:
 
 ```bash
 sudo chown -R $USER:$USER ~/openwrt-python-check-sdk
@@ -133,20 +131,20 @@ sudo chown -R $USER:$USER ~/openwrt-python-check-sdk
 
 ---
 
-## 🏗️ Build Package
+## 🏗️ Building the Package
 
 ```bash
 cd ~/openwrt-python-check-sdk
 make package
 ```
 
-Lần đầu chạy sẽ tự động:
-1. Build Docker image SDK
-2. Tải OpenWrt SDK 25.12.4 (~vài trăm MB)
-3. Compile C app bằng cross-compiler của SDK
-4. Sinh package `.apk` và copy binary ra `output/`
+On the first run, this will automatically:
+1. Build the SDK Docker image
+2. Download OpenWrt SDK 25.12.4 (~several hundred MB)
+3. Compile the C app using the SDK's cross-compiler
+4. Generate the `.apk` package and copy the binary to `output/`
 
-✅ **Output mong đợi ở cuối:**
+✅ **Expected output at the end:**
 
 ```
 Generated package files:
@@ -162,7 +160,7 @@ Copied runnable binary:
 -rwxr-xr-x ... output/check_python
 ```
 
-Kiểm tra output:
+Verify the output:
 
 ```bash
 ls -lh output/
@@ -177,13 +175,13 @@ check_python
 
 ---
 
-## 🧪 Test Case 1: Container Có Python 3.9
+## 🧪 Test Case 1: Container With Python 3.9
 
 ```bash
 make run
 ```
 
-✅ **Output mong đợi:**
+✅ **Expected output:**
 
 ```
 ===== CASE 1: Container has Python 3.9 =====
@@ -201,13 +199,13 @@ Detected Python Version: 3.9.x
 
 ---
 
-## 🧪 Test Case 2: Container Không Có Python
+## 🧪 Test Case 2: Container Without Python
 
 ```bash
 make test-no-python
 ```
 
-✅ **Output mong đợi:**
+✅ **Expected output:**
 
 ```
 ===== CASE 2: Container has no Python 3.9 =====
@@ -224,7 +222,7 @@ Error: Python 3.9 not found
 
 ---
 
-## 🧪 Chạy Cả 2 Case Cùng Lúc
+## 🧪 Running Both Cases Together
 
 ```bash
 make test-2-cases
@@ -238,51 +236,49 @@ make test-2-cases
 make inspect
 ```
 
-Hiển thị:
-- Nội dung thư mục `output/`
-- File `.apk` trong SDK
-- Binary `check_python` trong `build_dir`
+Displays:
+- Contents of the `output/` directory
+- `.apk` files inside the SDK
+- `check_python` binary in `build_dir`
 
 ---
 
-## 🗂️ Tóm Tắt Lệnh Make
+## 🗂️ Make Command Summary
 
-| Lệnh | Chức năng |
-|------|-----------|
-| `make package` | Build package OpenWrt `.apk` |
-| `make run` | Test Case 1: container có Python 3.9 |
-| `make test-no-python` | Test Case 2: container không có Python |
-| `make test-2-cases` | Chạy cả 2 case liên tiếp |
-| `make inspect` | Xem chi tiết file build output |
-| `make clean` | Xoá output build của package |
-| `make distclean` | Xoá toàn bộ SDK và output |
+| Command | Description |
+|---------|-------------|
+| `make package` | Build OpenWrt `.apk` package |
+| `make run` | Test Case 1: container with Python 3.9 |
+| `make test-no-python` | Test Case 2: container without Python |
+| `make test-2-cases` | Run both cases in sequence |
+| `make inspect` | View detailed build output files |
+| `make clean` | Remove package build output |
+| `make distclean` | Remove entire SDK and all output |
 
 ---
 
-## 🧹 Clean
+## 🧹 Cleanup
 
-Xoá output build:
+Remove build output:
 
 ```bash
 make clean
 ```
 
-Nếu gặp permission denied:
+If you encounter permission denied:
 
 ```bash
 sudo chown -R $USER:$USER ~/openwrt-python-check-sdk
 make clean
 ```
 
-Xoá toàn bộ SDK để build lại từ đầu:
+Remove the entire SDK to rebuild from scratch:
 
 ```bash
 make distclean
-make package   # sẽ tải lại SDK, hơi lâu
+make package   # will re-download the SDK, takes a while
 ```
 
 ---
 
-
-
-# Openwrt-python-check-sdk
+# openwrt-python-check-sdk
